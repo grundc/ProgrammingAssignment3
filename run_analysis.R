@@ -71,7 +71,7 @@ totalresult <- rbind(testDataOutput , trainDataOutput )
 rm(testDataOutput)
 rm(trainDataOutput)
 
-creating a summary "mean" for each column based on activity label
+# creating a summary "mean" for each column based on activity label
 
 summary <- totalresult %>% select(-1) %>% group_by (ActivityLabel) %>% summarize_each(funs(mean))
 
