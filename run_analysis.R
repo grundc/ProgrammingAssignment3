@@ -1,7 +1,4 @@
 
-# Setting my work directory
-
- setwd("./R")
 
 # Setting the file names for the raw data test & train
 
@@ -12,6 +9,9 @@ trainFile <- "./data/X_train.txt"
 
 TestFileActivities <- "./data/Y_test.txt"
 TrainFileActivities <- "./data/Y_train.txt"
+
+TestSubjects <- "./data/subject_test.txt"
+TrainSubjects <- "./data/subject_train.txt"
 
 # Setting the file name for the columns
 
@@ -27,13 +27,15 @@ library(dplyr)
 
 # I created a function "createDescriptiveDataSet " that is preparing the data
 
-createDescriptiveDataSet <- function(rawDataFile, DataActivityFile, ActivityLabelFile, ColumnNamesFile) {
+createDescriptiveDataSet <- function(rawDataFile, DataActivityFile, SubjectFile, ActivityLabelFile, ColumnNamesFile) {
 	
 	ColumnNames <- readLines(ColumnNamesFile)
 	
 	Activities <-  read.table(ActivityLabelFile, col.names=c("ActivityID","ActivityLabel"))
 
 	FileActivities <- readLines(DataActivityFile)
+	FileSubjects <- readLines(SubjectFile)
+
 	rawDataSet <- readLines(rawDataFile)
 	rawDataSet_list <- strsplit(rawDataSet , " ")
 	rm(rawDataSet)
@@ -43,9 +45,10 @@ createDescriptiveDataSet <- function(rawDataFile, DataActivityFile, ActivityLabe
 	colnames(rawData_frame) <- ColumnNames
 
 	rawData_frame$ActivityID <- FileActivities 
+	rawData_frame$SubjectID <- FileSubjects
 
 	rawData_frame <- merge(rawData_frame, Activities, by.x="ActivityID", by.y="ActivityID")	
-	rawData_frame <- select(rawData_frame, starts_with("Activity"), contains("mean()"), contains("std()"))
+	rawData_frame <- select(rawData_frame, starts_with("SubjectID"), starts_with("ActivityLabel"), contains("mean()"), contains("std()"))
 	
 	columnsToBeConverted <- c(grep("mean()", names(rawData_frame), fixed=T),grep("std()", names(rawData_frame), fixed=T))
 
@@ -59,8 +62,8 @@ createDescriptiveDataSet <- function(rawDataFile, DataActivityFile, ActivityLabe
 
 # Calling the function "createDescriptiveDataSet" 2 times for test and train
 
-testDataOutput <- createDescriptiveDataSet( testFile , TestFileActivities ,Activities , ColumnNames )
-trainDataOutput <- createDescriptiveDataSet( trainFile , TrainFileActivities ,Activities , ColumnNames)
+testDataOutput <- createDescriptiveDataSet( testFile , TestFileActivities, TestSubjects  ,Activities , ColumnNames )
+trainDataOutput <- createDescriptiveDataSet( trainFile , TrainFileActivities, TrainSubjects  ,Activities , ColumnNames)
 
 # Combining both data sets to one resultset
 
@@ -73,7 +76,13 @@ rm(trainDataOutput)
 
 # creating a summary "mean" for each column based on activity label
 
-summary <- totalresult %>% select(-1) %>% group_by (ActivityLabel) %>% summarize_each(funs(mean))
+summary <- totalresult %>% group_by (ActivityLabel,SubjectID) %>% summarize_each(funs(mean))
+
+# Writing result to disk as CSV
+
+write.table(summary, "samsung_analysis.csv", sep=",")
+
+
 
 
 
